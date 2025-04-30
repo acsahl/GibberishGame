@@ -157,9 +157,13 @@
         Room code copied!
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        const socket = io();
+        const socket = io('https://gibberish-game-backend.onrender.com', {
+            transports: ['websocket'],
+            reconnection: true,
+            reconnectionAttempts: 5
+        });
         let currentRoomCode = null;
         let isHost = false;
 

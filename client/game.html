@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Guess the Gibberish - Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         :root {
             --primary: #9B7EDE;
@@ -94,9 +94,11 @@
     </div>
 
     <script>
-        // Get the server URL from environment or use default
-        const serverUrl = process.env.SERVER_URL || 'http://localhost:3000';
-        const socket = io(serverUrl);
+        const socket = io('https://gibberish-game-backend.onrender.com', {
+            transports: ['websocket'],
+            reconnection: true,
+            reconnectionAttempts: 5
+        });
         
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room');
