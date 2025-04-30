@@ -11,13 +11,15 @@ const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
         origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
 // Enable CORS
 app.use(cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000"
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true
 }));
 
 // Serve static files
@@ -26,6 +28,11 @@ app.use(express.static(path.join(__dirname, '../client')));
 // Root route handler
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/lobby.html'));
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
 });
 
 // Store active rooms and their states
@@ -178,4 +185,5 @@ function endRound(roomCode) {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:3000"}`);
 }); 
