@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Guess the Gibberish</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#9B7EDE',
+                        'primary-hover': '#8A6DCD',
+                        secondary: '#7B68EE',
+                        'secondary-hover': '#6A57DD',
+                        background: '#F8F7FF',
+                        'card-background': '#FFFFFF',
+                        'text-color': '#2D2D2D',
+                        'border-color': '#E6E6FA',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'scale-in': 'scaleIn 0.5s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        scaleIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(135deg, #F8F7FF 0%, #F0EFFF 100%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(45deg, #9B7EDE, #7B68EE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title-container {
+            perspective: 1000px;
+        }
+
+        .title-float {
+            transform-style: preserve-3d;
+            backface-visibility: hidden;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .hover-scale {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px);
+        }
+
+        .button-glow {
+            box-shadow: 0 0 20px rgba(155, 126, 222, 0.3);
+        }
+
+        .button-glow:hover {
+            box-shadow: 0 0 30px rgba(155, 126, 222, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="container glass-effect rounded-3xl p-8 md:p-12 max-w-3xl w-full shadow-2xl animate-scale-in">
+        <h1 class="text-5xl md:text-6xl font-bold mb-12 gradient-text text-center">
+            Guess the Gibberish
+        </h1>
+        
+        <div class="section bg-white/30 rounded-3xl p-8 md:p-10 mb-8 border border-white/20 animate-slide-up">
+            <div class="action-buttons flex flex-col md:flex-row gap-6 mb-8 justify-center items-center">
+                <button onclick="showCreateForm()" class="create-btn bg-primary hover:bg-primary-hover text-white py-6 px-8 rounded-2xl font-semibold text-xl hover-lift transition-all duration-300 button-glow w-full md:w-auto">
+                    Create Room
+                </button>
+                <button onclick="showJoinForm()" class="join-btn bg-secondary hover:bg-secondary-hover text-white py-6 px-8 rounded-2xl font-semibold text-xl hover-lift transition-all duration-300 button-glow w-full md:w-auto">
+                    Join Room
+                </button>
+            </div>
+
+            <div id="createForm" class="form-group hidden animate-fade-in max-w-md mx-auto">
+                <input type="text" id="hostName" placeholder="Enter your name" required
+                    class="w-full p-5 rounded-2xl border-2 border-border-color focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 mb-6 text-lg bg-white/50">
+                <button onclick="createRoom()" class="create-btn bg-primary hover:bg-primary-hover text-white py-6 px-8 rounded-2xl font-semibold text-xl hover-lift transition-all duration-300 button-glow w-full">
+                    Start Room
+                </button>
+            </div>
+
+            <div id="joinForm" class="form-group hidden animate-fade-in max-w-md mx-auto">
+                <input type="text" id="playerName" placeholder="Enter your name" required
+                    class="w-full p-5 rounded-2xl border-2 border-border-color focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 mb-6 text-lg bg-white/50">
+                <input type="text" id="roomCode" placeholder="Enter room code" required
+                    class="w-full p-5 rounded-2xl border-2 border-border-color focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 mb-6 text-lg bg-white/50">
+                <button onclick="joinRoom()" class="join-btn bg-secondary hover:bg-secondary-hover text-white py-6 px-8 rounded-2xl font-semibold text-xl hover-lift transition-all duration-300 button-glow w-full">
+                    Join
+                </button>
+            </div>
+        </div>
+
+        <div id="roomInfo" class="hidden animate-scale-in max-w-2xl mx-auto">
+            <div class="room-code bg-white/30 rounded-3xl p-8 border border-white/20 flex items-center justify-center gap-6 mb-8">
+                <span id="codeText" class="text-3xl font-semibold text-text-color"></span>
+                <button onclick="shareRoomCode()" class="share-btn bg-secondary hover:bg-secondary-hover text-white py-3 px-6 rounded-2xl font-semibold hover-lift transition-all duration-300 button-glow flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                    </svg>
+                    Share
+                </button>
+            </div>
+            <div id="playerList" class="player-list hidden animate-fade-in space-y-4"></div>
+            <button id="startGameBtn" onclick="startGame()" class="w-full bg-primary hover:bg-primary-hover text-white py-6 px-8 rounded-2xl font-semibold text-xl hover-lift transition-all duration-300 button-glow mt-8">
+                Start Game
+            </button>
+        </div>
+    </div>
+
+    <div id="copySuccess" class="fixed top-4 right-4 bg-primary text-white py-4 px-8 rounded-2xl font-semibold hidden animate-fade-in button-glow">
+        Room code copied!
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentRoomCode = null;
+        let isHost = false;
+
+        function showCreateForm() {
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('joinForm').classList.add('hidden');
+            document.querySelector('.action-buttons').classList.add('hidden');
+        }
+
+        function showJoinForm() {
+            document.getElementById('joinForm').classList.remove('hidden');
+            document.getElementById('createForm').classList.add('hidden');
+            document.querySelector('.action-buttons').classList.add('hidden');
+        }
+
+        function createRoom() {
+            const hostName = document.getElementById('hostName').value;
+            if (!hostName) {
+                alert('Please enter your name');
+                return;
+            }
+            socket.emit('createRoom');
+        }
+
+        function joinRoom() {
+            const playerName = document.getElementById('playerName').value;
+            const roomCode = document.getElementById('roomCode').value;
+            
+            if (!playerName || !roomCode) {
+                alert('Please enter both your name and room code');
+                return;
+            }
+
+            socket.emit('joinRoom', { roomCode, playerName });
+        }
+
+        function startGame() {
+            if (isHost) {
+                socket.emit('startGame', { roomCode: currentRoomCode });
+            }
+        }
+
+        function shareRoomCode() {
+            const roomCode = document.getElementById('codeText').textContent;
+            const shareData = {
+                title: 'Join my Guess the Gibberish game!',
+                text: `Join my game! Room code: ${roomCode}`,
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData)
+                    .catch(err => {
+                        console.log('Error sharing:', err);
+                        copyToClipboard(roomCode);
+                    });
+            } else {
+                copyToClipboard(roomCode);
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const successMsg = document.getElementById('copySuccess');
+                successMsg.classList.remove('hidden');
+                setTimeout(() => {
+                    successMsg.classList.add('hidden');
+                }, 2000);
+            });
+        }
+
+        socket.on('roomCreated', ({ roomCode }) => {
+            currentRoomCode = roomCode;
+            isHost = true;
+            document.getElementById('codeText').textContent = `Room Code: ${roomCode}`;
+            document.getElementById('roomInfo').classList.remove('hidden');
+            document.querySelector('.section').classList.add('hidden');
+        });
+
+        socket.on('playerJoined', ({ players }) => {
+            const playerList = document.getElementById('playerList');
+            playerList.innerHTML = players.map(player => 
+                `<div class="player-item bg-white/30 rounded-2xl p-6 border border-white/20 hover:border-primary transition-all duration-300 hover-lift text-lg">
+                    ${player.name}
+                </div>`
+            ).join('');
+            playerList.classList.remove('hidden');
+        });
+
+        socket.on('error', ({ message }) => {
+            alert(message);
+        });
+
+        socket.on('gameStarted', () => {
+            const playerName = isHost ? document.getElementById('hostName').value : document.getElementById('playerName').value;
+            window.location.href = `game.html?room=${currentRoomCode}&name=${playerName}`;
+        });
+
+        socket.on('hostDisconnected', () => {
+            alert('The host has disconnected. Returning to lobby.');
+            window.location.reload();
+        });
+
+        socket.on('playerLeft', ({ players }) => {
+            const playerList = document.getElementById('playerList');
+            playerList.innerHTML = players.map(player => 
+                `<div class="player-item bg-white/30 rounded-2xl p-6 border border-white/20 hover:border-primary transition-all duration-300 hover-lift text-lg">
+                    ${player.name}
+                </div>`
+            ).join('');
+        });
+    </script>
+</body>
+</html> 

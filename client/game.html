@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guess the Gibberish - Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root {
+            --primary: #9B7EDE;
+            --secondary: #7B68EE;
+            --bg: #F8F7FF;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text: #2D2D2D;
+        }
+
+        body {
+            background: linear-gradient(135deg, #F8F7FF 0%, #E6E4FF 100%);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .timer {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 600;
+        }
+
+        .player-item {
+            transition: all 0.3s ease;
+        }
+
+        .player-item.correct {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: #4CAF50;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex">
+    <!-- Sidebar -->
+    <div class="w-64 glass-effect p-4 border-r border-gray-200">
+        <h2 class="text-xl font-semibold mb-4">Players</h2>
+        <div id="playersList" class="space-y-2">
+            <!-- Players will be added here dynamically -->
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Room Info -->
+            <div class="flex justify-between items-center mb-8">
+                <div class="text-lg">
+                    Room: <span id="roomCode" class="font-semibold"></span>
+                </div>
+                <div class="timer-container flex items-center gap-2">
+                    <div class="timer text-4xl font-bold gradient-text" id="timer">15</div>
+                    <span class="text-lg text-gray-600">seconds</span>
+                </div>
+            </div>
+
+            <!-- Game Content -->
+            <div class="glass-effect rounded-2xl p-8 shadow-lg">
+                <div class="text-center">
+                    <h1 class="text-5xl font-bold mb-8 gradient-text" id="gibberishPhrase">Waiting for phrase...</h1>
+                    
+                    <div class="max-w-md mx-auto">
+                        <input type="text" 
+                               id="answerInput" 
+                               class="w-full px-6 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all mb-4"
+                               placeholder="Type your answer...">
+                        
+                        <button id="submitAnswer" 
+                                class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transition-all transform hover:scale-105">
+                            Submit Answer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get the server URL from environment or use default
+        const serverUrl = process.env.SERVER_URL || 'http://localhost:3000';
+        const socket = io(serverUrl);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('room');
+        const playerName = urlParams.get('name');
+
+        // Update room code display
+        document.getElementById('roomCode').textContent = roomCode;
+
+        // Timer functionality
+        let timeLeft = 15;
+        let timerInterval;
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 15;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('submitAnswer').disabled = true;
+                    document.getElementById('gibberishPhrase').textContent = "Time's up!";
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const timerElement = document.getElementById('timer');
+            timerElement.textContent = timeLeft;
+            
+            // Add animation class when time is running low
+            if (timeLeft <= 5) {
+                timerElement.classList.add('animate-pulse');
+            } else {
+                timerElement.classList.remove('animate-pulse');
+            }
+        }
+
+        // Socket event handlers
+        socket.on('connect', () => {
+            socket.emit('joinGame', { roomCode, playerName });
+        });
+
+        socket.on('updatePlayers', (players) => {
+            const playersList = document.getElementById('playersList');
+            playersList.innerHTML = '';
+            
+            players.forEach(player => {
+                const playerElement = document.createElement('div');
+                playerElement.className = 'player-item p-3 rounded-lg border border-gray-200';
+                playerElement.textContent = player.name;
+                if (player.correct) {
+                    playerElement.classList.add('correct');
+                }
+                playersList.appendChild(playerElement);
+            });
+        });
+
+        socket.on('newPhrase', (data) => {
+            document.getElementById('gibberishPhrase').textContent = data.phrase;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('answerInput').disabled = false;
+            document.getElementById('answerInput').focus();
+            document.getElementById('submitAnswer').disabled = false;
+            startTimer();
+        });
+
+        socket.on('playerCorrect', (playerName) => {
+            const players = document.querySelectorAll('.player-item');
+            players.forEach(player => {
+                if (player.textContent === playerName) {
+                    player.classList.add('correct');
+                }
+            });
+        });
+
+        socket.on('roundEnd', (data) => {
+            document.getElementById('gibberishPhrase').textContent = `Correct answer: ${data.correctAnswer}`;
+            document.getElementById('submitAnswer').disabled = true;
+            document.getElementById('answerInput').disabled = true;
+            clearInterval(timerInterval);
+        });
+
+        // Submit answer handler
+        document.getElementById('submitAnswer').addEventListener('click', () => {
+            const answer = document.getElementById('answerInput').value.trim();
+            if (answer) {
+                socket.emit('submitAnswer', { roomCode, playerName, answer });
+                document.getElementById('submitAnswer').disabled = true;
+            }
+        });
+
+        // Also allow submitting with Enter key
+        document.getElementById('answerInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const answer = document.getElementById('answerInput').value.trim();
+                if (answer) {
+                    socket.emit('submitAnswer', { roomCode, playerName, answer });
+                    document.getElementById('submitAnswer').disabled = true;
+                }
+            }
+        });
+    </script>
+</body>
+</html> 
