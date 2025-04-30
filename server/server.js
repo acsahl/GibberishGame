@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const path = require('path');
 const cors = require('cors');
 
 const app = express();
@@ -20,6 +21,14 @@ app.use(cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true
 }));
+
+// Serve static files
+app.use(express.static(path.join(__dirname, '../client')));
+
+// Root route handler
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/lobby.html'));
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
