@@ -8,4 +8,4 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        value: https://your-netlify-site.netlify.app 
+        value: https://gibberishfish.netlify.app
